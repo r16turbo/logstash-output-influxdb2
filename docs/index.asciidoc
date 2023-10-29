@@ -1,7 +1,6 @@
-:plugin: example
+:plugin: influxdb2
 :type: output
 :default_codec: plain
-// Update header with plugin name and default codec
 
 ///////////////////////////////////////////
 START - GENERATED VARIABLES, DO NOT EDIT!
@@ -16,110 +15,144 @@ END - GENERATED VARIABLES, DO NOT EDIT!
 
 [id="plugins-{type}s-{plugin}"]
 
-=== Example output plugin
+=== InfluxDB2 output plugin
 
 include::{include_path}/plugin_header.asciidoc[]
 
 ==== Description
 
-Add plugin description here
+This output allows you to output metrics to InfluxDB 2.x.
 
-// Format anchors and links to support generated ids for versioning
-// Sample anchor: [id="plugins-{type}s-{plugin}-setting_name"]
-// Sample link: <<plugins-{type}s-{plugin}-setting_name>>
+Note: This plugin is a wrapper around influxdb-client-ruby and its configuration also follows the API.
+
+For more information, please visit https://github.com/influxdata/influxdb-client-ruby[influxdb-client-ruby homepage].
 
 [id="plugins-{type}s-{plugin}-options"]
-==== Example Output Configuration Options
+==== InfluxDB2 Output Configuration Options
+
+This plugin supports the following configuration options plus the <<plugins-{type}s-{plugin}-common-options>> described later.
 
 [cols="<,<,<",options="header",]
 |=======================================================================
 |Setting |Input type|Required
-| <<plugins-{type}s-{plugin}-a_setting_name>> |<<boolean,boolean>>|No
-| <<plugins-{type}s-{plugin}-another_setting_name>> |<<hash,hash>>|No
-| <<plugins-{type}s-{plugin}-setting_name_3>> |<<string,string>>|No
-| <<plugins-{type}s-{plugin}-setting_name_4>> |<<number,number>>|No
-| <<plugins-{type}s-{plugin}-setting_name_5>> |<<array,array>>|No
-| <<plugins-{type}s-{plugin}-setting_name_6>> |<<bytes,bytes>>|No
-| <<plugins-{type}s-{plugin}-setting_name_7>> |<<path,path>>|No
-| <<plugins-{type}s-{plugin}-setting_name_8>> |<<password,password>>|No
-| <<plugins-{type}s-{plugin}-setting_name_9>> |<<uri,uri>>|No
+| <<plugins-{type}s-{plugin}-url>> |<<string,string>>|Yes
+| <<plugins-{type}s-{plugin}-token>> |<<password,password>>|Yes
+| <<plugins-{type}s-{plugin}-options_>> |<<hash,hash>>|No
+| <<plugins-{type}s-{plugin}-write_options>> |<<hash,hash>>|No
+| <<plugins-{type}s-{plugin}-measurement>> |<<string,string>>|Yes
+| <<plugins-{type}s-{plugin}-tags>> |<<string,string>>|Yes
+| <<plugins-{type}s-{plugin}-fields>> |<<string,string>>|Yes
+| <<plugins-{type}s-{plugin}-include_tags>> |list of <<string,string>>|No
+| <<plugins-{type}s-{plugin}-exclude_tags>> |list of <<string,string>>|No
+| <<plugins-{type}s-{plugin}-escape_value>> |<<boolean,boolean>>|No
 |=======================================================================
 
-[id="plugins-{type}s-{plugin}-a_setting_name"]
-===== `a_setting_name` 
+Also see <<plugins-{type}s-{plugin}-common-options>> for a list of options supported by all
+output plugins.
 
-  * Value type is <<boolean,boolean>>
-  * Default value is `true`
+&nbsp;
 
-Add description here
+[id="plugins-{type}s-{plugin}-url"]
+===== `url`
 
-[id="plugins-{type}s-{plugin}-another_setting_name"]
-===== `another_setting_name` 
+  * This is a required setting.
+  * Value type is <<string,string>>
+  * There is no default value for this setting.
+
+InfluxDB URL to connect to (ex. https://localhost:8086).
+
+[id="plugins-{type}s-{plugin}-token"]
+===== `token`
+
+  * This is a required setting.
+  * Value type is <<password,password>>
+  * There is no default value for this setting.
+
+Access Token used for authenticating/authorizing the InfluxDB request sent by client.
+
+[id="plugins-{type}s-{plugin}-options_"]
+===== `options`
 
   * Value type is <<hash,hash>>
   * Default value is `{}`
 
-Add description here
+The options to be used by the https://influxdata.github.io/influxdb-client-ruby/InfluxDB2/Client.html[Client].
 
-[id="plugins-{type}s-{plugin}-setting_name_3"]
-===== `setting_name_3` 
+[id="plugins-{type}s-{plugin}-write_options"]
+===== `write_options`
 
-  * Value type is <<string,string>>
+  * Value type is <<hash,hash>>
   * Default value is `{}`
 
-Add description here
+The https://influxdata.github.io/influxdb-client-ruby/InfluxDB2/WriteOptions.html[write_options] to be used by the https://influxdata.github.io/influxdb-client-ruby/InfluxDB2/WriteApi.html[WriteApi].
 
-[id="plugins-{type}s-{plugin}-setting_name_4"]
-===== `setting_name_4` 
+[id="plugins-{type}s-{plugin}-measurement"]
+===== `measurement`
 
-  * Value type is <<number,number>>
-  * Default value is `0`
+  * This is a required setting.
+  * Value type is <<string,string>>
+  * There is no default value for this setting.
 
-Add description here
+Field to write to InfluxDB measurement.
 
-[id="plugins-{type}s-{plugin}-setting_name_5"]
-===== `setting_name_5` 
+For example:
+[source,ruby]
+    measurement => "%{[kubernetes][labels][app]}"
 
-  * Value type is <<array,array>>
-  * Default value is {}
+[id="plugins-{type}s-{plugin}-tags"]
+===== `tags`
 
-Add description here
+  * This is a required setting.
+  * Value type is <<string,string>>
+  * There is no default value for this setting.
 
-[id="plugins-{type}s-{plugin}-setting_name_6"]
-===== `setting_name_6` 
+Fields to write to InfluxDB tags.
 
-  * Value type is <<bytes,bytes>>
-  * Default value is {}
+For example:
+[source,ruby]
+    tags => "[prometheus][labels]"
 
-Add description here
+[id="plugins-{type}s-{plugin}-fields"]
+===== `fields`
 
-[id="plugins-{type}s-{plugin}-setting_name_7"]
-===== `setting_name_7` 
+  * This is a required setting.
+  * Value type is <<string,string>>
+  * There is no default value for this setting.
 
-  * Value type is <<path,path>>
-  * Default value is {}
+Fields to write to InfluxDB fields.
 
-Add description here
+[source,ruby]
+    fields => "[prometheus][metrics]"
 
-[id="plugins-{type}s-{plugin}-setting_name_8"]
-===== `setting_name_8` 
+[id="plugins-{type}s-{plugin}-include_tags"]
+===== `include_tags`
 
-  * Value type is <<password,password>>
-  * Default value is {}
+  * Value type is a list of <<string,string>>
+  * Default value is `[]`
 
-Add description here
+An array of field names to include in the InfluxDB fields.
 
+[id="plugins-{type}s-{plugin}-exclude_tags"]
+===== `exclude_tags`
 
-[id="plugins-{type}s-{plugin}-setting_name_9"]
-===== `setting_name_9` 
+  * Value type is a list of <<string,string>>
+  * Default value is `[]`
 
-  * Value type is <<uri,uri>>
-  * Default value is {}
+An array of field names to exclude from InfluxDB fields.
 
-Add description here
+[id="plugins-{type}s-{plugin}-escape_value"]
+===== `escape_value`
 
-// The full list of Value Types is here: 
-// https://www.elastic.co/guide/en/logstash/current/configuration-file-structure.html
+  * Value type is <<boolean,boolean>>
+  * Default value is `false`
+
+Enable escaping of InfluxDB field values.
+
+The default is false to prevent unintended modification due to escape.
+Other items (measurements, tags, field names) are escaped.
+Type conversions should be implemented in filters.
+
+NOTE: https://docs.influxdata.com/influxdb/v2/reference/syntax/line-protocol/#special-characters[Line protocol | InfluxDB OSS v2 Documentation#Special Characters]
 
 [id="plugins-{type}s-{plugin}-common-options"]
 include::{include_path}/{type}.asciidoc[]
