@@ -1,0 +1,7 @@
+logstash-output-influxdb2
+Copyright 2023 Issey Yamakoshi
+
+This product includes software developed by The Apache Software
+Foundation (http://www.apache.org/).
+
+I will donate the source if Elastic wonts.
