@@ -1,2 +1,6 @@
+## 0.2.0
+  - Add a copyright notice
+  - Update gemspec summary
+
 ## 0.1.0
-  - Plugin created with the logstash plugin generator
+  - First release
