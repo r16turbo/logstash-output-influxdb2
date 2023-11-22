@@ -32,20 +32,28 @@ class LogStash::Outputs::InfluxDB2 < LogStash::Outputs::Base
 
   public
   def receive(event)
-    tags = event.get(@tags)
-    unless @include_tags.empty?
-      tags = tags.select { |k,v| @include_tags.include?(k) }
-    end
-    unless @exclude_tags.empty?
-      tags = tags.select { |k,v| ! @exclude_tags.include?(k) }
-    end
     fields = event.get(@fields)
+    return unless fields.is_a?(Hash) && fields.size > 0
+
+    tags = event.get(@tags)
+    unless tags.nil?
+      return unless tags.is_a?(Hash)
+      unless @include_tags.empty?
+        tags = tags.select { |k,v| @include_tags.include?(k) }
+      end
+      unless @exclude_tags.empty?
+        tags = tags.select { |k,v| ! @exclude_tags.include?(k) }
+      end
+    end
+
     unless @escape_value
       fields = fields.transform_values { |v| ToStr.new(v) }
     end
+
     @write_api.write(data: InfluxDB2::Point.new(
       name: event.sprintf(@measurement), tags: tags, fields: fields,
       time: event.timestamp.time, precision: @precision))
+
   rescue InfluxDB2::InfluxError => ie
     @logger.warn("HTTP communication error while writing to InfluxDB", :exception => ie)
   rescue Exception => e

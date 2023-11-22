@@ -336,4 +336,90 @@ describe LogStash::Outputs::InfluxDB2 do
 
   end
 
+  context "validate payload - invalid event" do
+
+    let(:config) do
+    {
+      "url" => "http://localhost:8086",
+      "token" => "token123",
+      "options" => { "bucket" => "test-bucket", "org" => "test-org", "precision" => "ms" },
+      "measurement" => "%{[kubernetes][labels][app]}",
+      "tags" => "[prometheus][labels]",
+      "fields" => "[prometheus][metrics]"
+    }
+    end
+
+    before do
+      subject.register
+
+      write_api = subject.instance_variable_get(:@write_api)
+      allow(write_api).to receive(:write_raw).and_return(nil)
+
+      subject.receive(LogStash::Event.new(
+        "@timestamp" => "2020-01-01T00:00:00Z",
+        "kubernetes" => { "labels" => { "app" => "dummy" } },
+        "prometheus" => {
+          "labels" => { "foo" => "bar", "abc" => "xyz" }
+          # Invalid: no metrics!
+        }
+      ))
+
+      subject.receive(LogStash::Event.new(
+        "@timestamp" => "2020-01-01T00:00:00Z",
+        "kubernetes" => { "labels" => { "app" => "dummy" } },
+        "prometheus" => {
+          "labels" => { "foo" => "bar", "abc" => "xyz" },
+          "metrics" => {}  # Invalid: no metrics!
+        }
+      ))
+
+      subject.receive(LogStash::Event.new(
+        "@timestamp" => "2020-01-01T00:00:00Z",
+        "kubernetes" => { "labels" => { "app" => "dummy" } },
+        "prometheus" => {
+          "labels" => { "foo" => "bar", "abc" => "xyz" },
+          "metrics" => 123.0  # Invalid: metrics are not a hash!
+        }
+      ))
+
+      subject.receive(LogStash::Event.new(
+        "@timestamp" => "2020-01-01T00:00:00Z",
+        "kubernetes" => { "labels" => { "app" => "dummy" } },
+        "prometheus" => {
+          "metrics" => { "count" => 123.0 }
+          # Valid: no labels!
+        }
+      ))
+
+      subject.receive(LogStash::Event.new(
+        "@timestamp" => "2020-01-01T00:00:00Z",
+        "kubernetes" => { "labels" => { "app" => "dummy" } },
+        "prometheus" => {
+          "labels" => {},  # Valid: no labels!
+          "metrics" => { "count" => 123.0 }
+        }
+      ))
+
+      subject.receive(LogStash::Event.new(
+        "@timestamp" => "2020-01-01T00:00:00Z",
+        "kubernetes" => { "labels" => { "app" => "dummy" } },
+        "prometheus" => {
+          "labels" => "test",  # Invalid: labels are not a hash!
+          "metrics" => { "count" => 123.0 }
+        }
+      ))
+
+      subject.close
+    end
+
+    it "check payload" do
+      write_api = subject.instance_variable_get(:@write_api)
+
+      expect(write_api).to have_received(:write_raw)
+        .with('dummy count=123.0 1577836800000',
+              {:bucket=>"test-bucket", :org=>"test-org", :precision=>"ms"}).twice
+    end
+
+  end
+
 end
