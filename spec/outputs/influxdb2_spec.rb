@@ -58,8 +58,6 @@ describe LogStash::Outputs::InfluxDB2 do
       expect(subject.instance_variable_get(:@measurement)).to eq "%{[kubernetes][labels][app]}"
       expect(subject.instance_variable_get(:@tags)).to eq "[prometheus][labels]"
       expect(subject.instance_variable_get(:@fields)).to eq "[prometheus][metrics]"
-      expect(subject.instance_variable_get(:@include_tags)).to eq []
-      expect(subject.instance_variable_get(:@exclude_tags)).to eq []
       expect(subject.instance_variable_get(:@escape_value)).to be false
     end
 
@@ -100,8 +98,6 @@ describe LogStash::Outputs::InfluxDB2 do
       "measurement" => "%{[kubernetes][labels][app]}",
       "tags" => "[prometheus][labels]",
       "fields" => "[prometheus][metrics]",
-      "include_tags" => [ "foo", "abc" ],
-      "exclude_tags" => [ "bar", "xyz" ],
       "escape_value" => true
     }
     end
@@ -145,8 +141,6 @@ describe LogStash::Outputs::InfluxDB2 do
       expect(subject.instance_variable_get(:@measurement)).to eq "%{[kubernetes][labels][app]}"
       expect(subject.instance_variable_get(:@tags)).to eq "[prometheus][labels]"
       expect(subject.instance_variable_get(:@fields)).to eq "[prometheus][metrics]"
-      expect(subject.instance_variable_get(:@include_tags)).to eq [ "foo", "abc" ]
-      expect(subject.instance_variable_get(:@exclude_tags)).to eq [ "bar", "xyz" ]
       expect(subject.instance_variable_get(:@escape_value)).to be true
     end
 
@@ -284,54 +278,6 @@ describe LogStash::Outputs::InfluxDB2 do
       expect(write_api).to have_received(:write_raw)
         .with('dummy,abc=xyz,foo=bar count=abc 1577836800000',
               {:bucket=>"test-bucket", :org=>"test-org", :precision=>"ms"}).once
-    end
-
-  end
-
-  context "validate payload - tag filter" do
-
-    let(:config) do
-    {
-      "url" => "http://localhost:8086",
-      "token" => "token123",
-      "options" => { "bucket" => "test-bucket", "org" => "test-org", "precision" => "ms" },
-      "measurement" => "%{[kubernetes][labels][app]}",
-      "tags" => "[prometheus][labels]",
-      "fields" => "[prometheus][metrics]",
-      "include_tags" => [ "foo", "abc", "test" ],
-      "exclude_tags" => [ "bar", "xyz", "test" ],
-      "escape_value" => true
-    }
-    end
-
-    before do
-      subject.register
-
-      write_api = subject.instance_variable_get(:@write_api)
-      allow(write_api).to receive(:write_raw).and_return(nil)
-
-      subject.receive(LogStash::Event.new(
-        "@timestamp" => "2020-01-01T00:00:00Z",
-        "kubernetes" => { "labels" => { "app" => "dummy" } },
-        "prometheus" => {
-          "labels" => {
-            "foo" => "bar", "abc" => "xyz",
-            "bar" => "foo", "xyz" => "abc",
-            "test" => "123"
-          },
-          "metrics" => { "message" => "Hello World!" }
-        }
-      ))
-
-      subject.close
-    end
-
-    it "check payload" do
-      write_api = subject.instance_variable_get(:@write_api)
-
-      expect(write_api).to have_received(:write_raw)
-        .with('dummy,abc=xyz,foo=bar message="Hello World!" 1577836800000',
-              {:bucket=>"test-bucket", :org=>"test-org", :precision=>"ms"})
     end
 
   end

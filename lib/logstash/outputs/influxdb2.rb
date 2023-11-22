@@ -17,9 +17,6 @@ class LogStash::Outputs::InfluxDB2 < LogStash::Outputs::Base
   config :tags, :validate => :string, :required => true
   config :fields, :validate => :string, :required => true
 
-  config :include_tags, :validate => :string, :list => true, :default => []
-  config :exclude_tags, :validate => :string, :list => true, :default => []
-
   config :escape_value, :validate => :boolean, :default => false
 
   public
@@ -36,15 +33,7 @@ class LogStash::Outputs::InfluxDB2 < LogStash::Outputs::Base
     return unless fields.is_a?(Hash) && fields.size > 0
 
     tags = event.get(@tags)
-    unless tags.nil?
-      return unless tags.is_a?(Hash)
-      unless @include_tags.empty?
-        tags = tags.select { |k,v| @include_tags.include?(k) }
-      end
-      unless @exclude_tags.empty?
-        tags = tags.select { |k,v| ! @exclude_tags.include?(k) }
-      end
-    end
+    return unless tags.nil? || tags.is_a?(Hash)
 
     unless @escape_value
       fields = fields.transform_values { |v| ToStr.new(v) }

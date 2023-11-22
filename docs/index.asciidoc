@@ -42,8 +42,6 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-measurement>> |<<string,string>>|Yes
 | <<plugins-{type}s-{plugin}-tags>> |<<string,string>>|Yes
 | <<plugins-{type}s-{plugin}-fields>> |<<string,string>>|Yes
-| <<plugins-{type}s-{plugin}-include_tags>> |list of <<string,string>>|No
-| <<plugins-{type}s-{plugin}-exclude_tags>> |list of <<string,string>>|No
 | <<plugins-{type}s-{plugin}-escape_value>> |<<boolean,boolean>>|No
 |=======================================================================
 
@@ -123,22 +121,6 @@ Fields to write to InfluxDB fields.
 
 [source,ruby]
     fields => "[prometheus][metrics]"
-
-[id="plugins-{type}s-{plugin}-include_tags"]
-===== `include_tags`
-
-  * Value type is a list of <<string,string>>
-  * Default value is `[]`
-
-An array of field names to include in the InfluxDB fields.
-
-[id="plugins-{type}s-{plugin}-exclude_tags"]
-===== `exclude_tags`
-
-  * Value type is a list of <<string,string>>
-  * Default value is `[]`
-
-An array of field names to exclude from InfluxDB fields.
 
 [id="plugins-{type}s-{plugin}-escape_value"]
 ===== `escape_value`
