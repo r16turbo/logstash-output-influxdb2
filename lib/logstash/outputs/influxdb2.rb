@@ -30,7 +30,7 @@ class LogStash::Outputs::InfluxDB2 < LogStash::Outputs::Base
   public
   def receive(event)
     fields = event.get(@fields)
-    return unless fields.is_a?(Hash) && fields.size > 0
+    return unless fields.is_a?(Hash) && ! fields.empty?
 
     tags = event.get(@tags)
     return unless tags.nil? || tags.is_a?(Hash)
