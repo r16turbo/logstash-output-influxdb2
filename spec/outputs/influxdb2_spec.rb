@@ -14,7 +14,6 @@ describe LogStash::Outputs::InfluxDB2 do
       "url" => "http://localhost:8086",
       "token" => "token123",
       "measurement" => "%{[kubernetes][labels][app]}",
-      "tags" => "[prometheus][labels]",
       "fields" => "[prometheus][metrics]"
     }
     end
@@ -56,7 +55,7 @@ describe LogStash::Outputs::InfluxDB2 do
       expect(write_options.batch_abort_on_exception).to be false
 
       expect(subject.instance_variable_get(:@measurement)).to eq "%{[kubernetes][labels][app]}"
-      expect(subject.instance_variable_get(:@tags)).to eq "[prometheus][labels]"
+      expect(subject.instance_variable_get(:@tags)).to be_nil
       expect(subject.instance_variable_get(:@fields)).to eq "[prometheus][metrics]"
       expect(subject.instance_variable_get(:@escape_value)).to be false
     end
@@ -332,8 +331,8 @@ describe LogStash::Outputs::InfluxDB2 do
         "@timestamp" => "2020-01-01T00:00:00Z",
         "kubernetes" => { "labels" => { "app" => "dummy" } },
         "prometheus" => {
-          "metrics" => { "count" => 123.0 }
           # Valid: no labels!
+          "metrics" => { "count" => 123.0 }
         }
       ))
 

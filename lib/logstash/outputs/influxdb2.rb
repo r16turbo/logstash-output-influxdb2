@@ -14,7 +14,7 @@ class LogStash::Outputs::InfluxDB2 < LogStash::Outputs::Base
   config :write_options, :validate => :hash, :default => {}
 
   config :measurement, :validate => :string, :required => true
-  config :tags, :validate => :string, :required => true
+  config :tags, :validate => :string
   config :fields, :validate => :string, :required => true
 
   config :escape_value, :validate => :boolean, :default => false
@@ -32,7 +32,7 @@ class LogStash::Outputs::InfluxDB2 < LogStash::Outputs::Base
     fields = event.get(@fields)
     return unless fields.is_a?(Hash) && ! fields.empty?
 
-    tags = event.get(@tags)
+    tags = @tags.nil? ? nil : event.get(@tags)
     return unless tags.nil? || tags.is_a?(Hash)
 
     unless @escape_value
