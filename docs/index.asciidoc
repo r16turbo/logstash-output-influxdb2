@@ -23,9 +23,98 @@ include::{include_path}/plugin_header.asciidoc[]
 
 This output allows you to output metrics to InfluxDB 2.x.
 
-Note: This plugin is a wrapper around influxdb-client-ruby and its configuration also follows the API.
-
 For more information, please visit https://github.com/influxdata/influxdb-client-ruby[influxdb-client-ruby homepage].
+
+NOTE: This plugin is a wrapper around influxdb-client-ruby and its configuration also follows the API.
+
+===== Usage example
+
+This output was designed to work with https://www.elastic.co/guide/en/beats/metricbeat/current/metricbeat-module-prometheus.html[Metricbeat Prometheus module].
+
+Data formatting should be done using the filter plugin.
+For example, tag filtering can be done with the https://rubygems.org/gems/logstash-filter-hash_select[hash_select] filter,
+and field filtering with https://www.elastic.co/guide/en/beats/metricbeat/current/configuration-autodiscover.html[Metricbeat Autodiscover] feature.
+
+metricbeat.yml (excerpt)
+
+[source,yaml]
+----
+metricbeat.autodiscover:
+  providers:
+    - type: kubernetes
+      templates:
+        - condition:
+            contains:
+              kubernetes.annotations.prometheus.io/scrape: "true"
+          config:
+            - module: prometheus
+              hosts: ${data.host}:${data.kubernetes.labels.prometheus.io/port}
+              metrics_path: ${data.kubernetes.labels.prometheus.io/path}
+              metrics_filters:  # <1>
+                include:
+                  - ^jvm_memory_[a-z]+_bytes$
+                  - ^http_server_requests_seconds\w*
+----
+
+<1> InfluxDB Field filtering
+
+logstash.conf
+
+[source,ruby]
+----
+input {
+  beats {
+    port => 5044
+  }
+}
+
+filter {
+  if [event][module] == "prometheus" {
+    mutate {  # <1>
+      add_field => {
+        "[prometheus][labels][pod_name]" => "%{[kubernetes][pod][name]}"
+      }
+    }
+
+    hash_select {  # <2>
+      hash_field => "[prometheus][labels]"
+      include_keys => [
+        "pod_name",
+        "area", "id",
+        "uri", "method", "status", "outcome", "le"
+      ]
+    }
+  }
+}
+
+output {
+  influxdb2 {
+    url => "http://influxdb:8086"
+    token => "token123"
+
+    options => {
+      org => "test"
+      bucket => "statistics"
+
+      precision => "ns"  # <3>
+      use_ssl => false
+    }
+
+    write_options => {
+      write_type => 2  # <4>
+    }
+
+    measurement => "%{[kubernetes][labels][app]}"
+    tags => "[prometheus][labels]"
+    fields => "[prometheus][metrics]"
+  }
+}
+----
+
+<1> Add pod name to InfluxDB tag
+<2> InfluxDB Tag filtering
+<3> See also: https://influxdata.github.io/influxdb-client-ruby/InfluxDB2/WritePrecision.html[WritePrecision]
+<4> See also: https://influxdata.github.io/influxdb-client-ruby/InfluxDB2/WriteType.html[WriteType]
 
 [id="plugins-{type}s-{plugin}-options"]
 ==== InfluxDB2 Output Configuration Options
@@ -40,7 +129,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-options_>> |<<hash,hash>>|No
 | <<plugins-{type}s-{plugin}-write_options>> |<<hash,hash>>|No
 | <<plugins-{type}s-{plugin}-measurement>> |<<string,string>>|Yes
-| <<plugins-{type}s-{plugin}-tags>> |<<string,string>>|Yes
+| <<plugins-{type}s-{plugin}-tags>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-fields>> |<<string,string>>|Yes
 | <<plugins-{type}s-{plugin}-escape_value>> |<<boolean,boolean>>|No
 |=======================================================================
@@ -91,7 +180,7 @@ The https://influxdata.github.io/influxdb-client-ruby/InfluxDB2/WriteOptions.htm
   * Value type is <<string,string>>
   * There is no default value for this setting.
 
-Field to write to InfluxDB measurement.
+InfluxDB measurement. (supports sprintf formatting)
 
 For example:
 [source,ruby]
@@ -100,11 +189,10 @@ For example:
 [id="plugins-{type}s-{plugin}-tags"]
 ===== `tags`
 
-  * This is a required setting.
   * Value type is <<string,string>>
   * There is no default value for this setting.
 
-Fields to write to InfluxDB tags.
+Hash field to write to InfluxDB tags.
 
 For example:
 [source,ruby]
@@ -117,8 +205,9 @@ For example:
   * Value type is <<string,string>>
   * There is no default value for this setting.
 
-Fields to write to InfluxDB fields.
+Hash field to write to InfluxDB fields.
 
+For example:
 [source,ruby]
     fields => "[prometheus][metrics]"
 
