@@ -1,3 +1,7 @@
+## 0.4.0
+  - Update documents
+  - Change tags to optional
+
 ## 0.3.0
   - Add guards for invalid event
   - Remove include_tags and exclude_tags
